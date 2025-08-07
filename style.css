@@ -92,11 +92,12 @@ body {
 
 #btnCreateTab,
 #btnSettings,
-#btnExport {
+#btnExport,
+#btnDeleteTab {
   background: #7b3fbf;
   border: none;
   color: white;
-  font-size: 22px;
+  font-size: 18px;
   padding: 6px 14px;
   border-radius: 8px;
   margin-left: 8px;
@@ -107,7 +108,8 @@ body {
 
 #btnCreateTab:hover,
 #btnSettings:hover,
-#btnExport:hover {
+#btnExport:hover,
+#btnDeleteTab:hover {
   background: #6a35b3;
 }
 
@@ -187,6 +189,7 @@ img.sticker.dragging,
   user-select: none;
   transition: transform 0.2s ease;
   user-select: none;
+  z-index: 999;
 }
 
 #stickerDumpster.dragover {
