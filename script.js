@@ -392,6 +392,11 @@ editorContainer.addEventListener("drop", (e) => {
   sticker.x = x;
   sticker.y = y;
 
+  // If near dumpster (within 10px), don't add, just delete
+  if (isNearDumpster(x, y, 50, 50)) {
+    return; // just ignore - don't add sticker
+  }
+
   addStickerToCanvas(sticker);
   saveSticker(sticker);
 });
@@ -445,8 +450,8 @@ function setupStickerDrag(el, sticker) {
     x = Math.max(0, Math.min(x, containerRect.width - el.offsetWidth));
     y = Math.max(0, Math.min(y, containerRect.height - el.offsetHeight));
 
-    // Check if over dumpster
-    if (isOverDumpster(x, y, el.offsetWidth, el.offsetHeight)) {
+    // If near dumpster (within 10 px), delete sticker
+    if (isNearDumpster(x, y, el.offsetWidth, el.offsetHeight)) {
       el.remove();
       removeSticker(sticker);
       return;
@@ -459,21 +464,30 @@ function setupStickerDrag(el, sticker) {
   });
 }
 
-function isOverDumpster(x, y, w, h) {
+// Checks if sticker is within 10 pixels of dumpster (rectangle)
+// x,y: top-left coords of sticker relative to container
+// w,h: sticker width and height
+function isNearDumpster(x, y, w, h) {
   const dumpsterRect = stickerDumpster.getBoundingClientRect();
   const containerRect = editorContainer.getBoundingClientRect();
 
-  // Convert to viewport coords
+  // Convert sticker coords to viewport coords
   const stickerLeft = containerRect.left + x;
   const stickerRight = stickerLeft + w;
   const stickerTop = containerRect.top + y;
   const stickerBottom = stickerTop + h;
 
+  // Define extended dumpster rectangle by 10px in all directions
+  const extendedLeft = dumpsterRect.left - 10;
+  const extendedRight = dumpsterRect.right + 10;
+  const extendedTop = dumpsterRect.top - 10;
+  const extendedBottom = dumpsterRect.bottom + 10;
+
   return !(
-    stickerRight < dumpsterRect.left ||
-    stickerLeft > dumpsterRect.right ||
-    stickerBottom < dumpsterRect.top ||
-    stickerTop > dumpsterRect.bottom
+    stickerRight < extendedLeft ||
+    stickerLeft > extendedRight ||
+    stickerBottom < extendedTop ||
+    stickerTop > extendedBottom
   );
 }
 
