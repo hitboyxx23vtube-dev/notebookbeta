@@ -6,11 +6,12 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Auth container -->
   <div id="authContainer" class="centered">
     <div class="auth-box">
       <h2>🔐 Custom Notebook Login</h2>
-      <input type="text" id="username" placeholder="Username" autocomplete="off"/>
-      <input type="password" id="password" placeholder="Password" autocomplete="off"/>
+      <input type="text" id="username" placeholder="Username" autocomplete="off" />
+      <input type="password" id="password" placeholder="Password" autocomplete="off" />
       <div class="auth-buttons">
         <button id="loginBtn">Login</button>
         <button id="signupBtn">Sign Up</button>
@@ -19,10 +20,12 @@
     </div>
   </div>
 
+  <!-- Notebook container -->
   <div id="notebookContainer" style="display:none;">
     <div id="topBar">
       <div id="tabs"></div>
       <button id="btnCreateTab" title="Create New Tab">➕</button>
+      <button id="btnDeleteTab" title="Delete Current Tab">🗑️ Delete Tab</button>
       <button id="btnSettings" title="Open Settings">⚙️</button>
       <button id="btnExport" title="Export Tab to TXT">📤 Export Tab</button>
     </div>
