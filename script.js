@@ -1,3 +1,4 @@
+// Elements
 const username = document.getElementById("username");
 const password = document.getElementById("password");
 const authMessage = document.getElementById("authMessage");
@@ -22,6 +23,7 @@ const btnExport = document.getElementById("btnExport");
 const resetThemeBtn = document.getElementById("resetThemeBtn");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const customStickerInput = document.getElementById("customSticker");
+const btnDeleteTab = document.getElementById("btnDeleteTab");
 
 let currentUser = "";
 let currentTab = "";
@@ -86,6 +88,7 @@ function loadUserData() {
     currentTab = "";
     noteInput.value = "";
     editorContainer.style.backgroundImage = "none";
+    editorContainer.style.backgroundColor = "black";
     musicPlayer.pause();
     musicPlayer.src = "";
   }
@@ -116,6 +119,26 @@ function createTab() {
   saveUsers(users);
   renderTab(name);
   switchTab(name);
+}
+
+function deleteCurrentTab() {
+  if (!currentTab) return alert("No tab selected.");
+  if (!confirm(`Delete tab "${currentTab}"? This action cannot be undone.`)) return;
+  const users = getUsers();
+  delete users[currentUser].data.tabs[currentTab];
+  saveUsers(users);
+  tabs = tabs.filter((t) => t !== currentTab);
+  if (tabs.length > 0) {
+    loadUserData();
+  } else {
+    currentTab = "";
+    tabsDiv.innerHTML = "";
+    noteInput.value = "";
+    editorContainer.style.backgroundImage = "none";
+    editorContainer.style.backgroundColor = "black";
+    musicPlayer.pause();
+    musicPlayer.src = "";
+  }
 }
 
 function renderTab(name) {
@@ -169,10 +192,13 @@ noteInput.addEventListener("input", () => {
 });
 
 btnCreateTab.addEventListener("click", createTab);
+btnDeleteTab.addEventListener("click", deleteCurrentTab);
+
 btnSettings.addEventListener("click", () => {
   if (!currentTab) return alert("Please select or create a tab first.");
   settingsPanel.style.display = "block";
 });
+
 btnExport.addEventListener("click", () => {
   if (!currentUser || !currentTab) return alert("Please select a tab.");
   const content = getUsers()[currentUser].data.tabs[currentTab].content;
@@ -181,174 +207,37 @@ btnExport.addEventListener("click", () => {
   a.href = URL.createObjectURL(blob);
   a.download = `${currentTab}.txt`;
   a.click();
+  URL.revokeObjectURL(a.href);
 });
+
 resetThemeBtn.addEventListener("click", () => {
   if (!currentUser || !currentTab) return;
+  bgColorInput.value = "#000000";
+  tabColorInput.value = "#7b3fbf";
+  tabTextColorInput.value = "#FFFFFF";
+  fontSelector.value = "Arial";
+  customFontInput.style.display = "none";
+  customFontInput.value = "";
+
   const users = getUsers();
   const tabData = users[currentUser].data.tabs[currentTab];
   tabData.bgColor = "#000000";
   tabData.tabColor = "#7b3fbf";
   tabData.tabTextColor = "#FFFFFF";
-  tabData.bgImage = "";
-  tabData.music = "";
   tabData.font = "Arial";
   tabData.customFont = "";
+  tabData.bgImage = "";
+  tabData.music = "";
   saveUsers(users);
+
   switchTab(currentTab);
 });
+
 closeSettingsBtn.addEventListener("click", () => {
   settingsPanel.style.display = "none";
 });
 
-// Sticker Drag & Drop Logic
-
-customStickerInput.addEventListener("change", (e) => {
-  if (!currentUser || !currentTab) return alert("Select a tab first.");
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = document.createElement("img");
-    img.src = reader.result;
-    img.className = "sticker";
-    setupStickerDrag(img, reader.result, "image");
-    editorContainer.appendChild(img);
-    saveSticker(reader.result, "image", 100, 100);
-  };
-  reader.readAsDataURL(file);
-  e.target.value = "";
-});
-
-document.querySelectorAll(".emojiSticker").forEach((emoji) => {
-  emoji.addEventListener("dragstart", (e) => {
-    const el = document.createElement("span");
-    el.className = "emojiOnCanvas dragging";
-    el.textContent = e.target.textContent;
-    editorContainer.appendChild(el);
-    e.dataTransfer.setDragImage(el, 25, 25);
-    el.style.left = e.clientX + "px";
-    el.style.top = e.clientY + "px";
-    e.dataTransfer.setData("text/plain", e.target.textContent);
-    e.dataTransfer.effectAllowed = "copyMove";
-  });
-});
-
-function addStickerToCanvas(sticker) {
-  if (!currentUser || !currentTab) return;
-  if (sticker.type === "image") {
-    const img = document.createElement("img");
-    img.src = sticker.src;
-    img.className = "sticker";
-    img.style.left = sticker.x + "px";
-    img.style.top = sticker.y + "px";
-    setupStickerDrag(img, sticker.src, "image");
-    editorContainer.appendChild(img);
-  } else if (sticker.type === "emoji") {
-    const span = document.createElement("span");
-    span.textContent = sticker.src;
-    span.className = "emojiOnCanvas";
-    span.style.left = sticker.x + "px";
-    span.style.top = sticker.y + "px";
-    setupStickerDrag(span, sticker.src, "emoji");
-    editorContainer.appendChild(span);
-  }
-}
-
-function setupStickerDrag(el, src, type) {
-  el.style.position = "absolute";
-  el.style.touchAction = "none";
-  el.draggable = true;
-
-  let offsetX, offsetY;
-
-  el.addEventListener("dragstart", (e) => {
-    el.classList.add("dragging");
-    const rect = el.getBoundingClientRect();
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-
-    e.dataTransfer.setDragImage(el, offsetX, offsetY);
-    e.dataTransfer.setData("text/plain", JSON.stringify({ src, type }));
-  });
-
-  el.addEventListener("dragend", (e) => {
-    el.classList.remove("dragging");
-
-    // Compute new position relative to editorContainer
-    const containerRect = editorContainer.getBoundingClientRect();
-    let x = e.clientX - containerRect.left - offsetX;
-    let y = e.clientY - containerRect.top - offsetY;
-
-    // Clamp positions so sticker stays inside container
-    x = Math.max(0, Math.min(x, containerRect.width - el.offsetWidth));
-    y = Math.max(0, Math.min(y, containerRect.height - el.offsetHeight));
-
-    // Check collision with dumpster
-    if (isOverDumpster(x, y, el.offsetWidth, el.offsetHeight)) {
-      // Remove sticker & update storage
-      el.remove();
-      removeSticker(src, type);
-      return;
-    }
-
-    el.style.left = x + "px";
-    el.style.top = y + "px";
-
-    saveStickerPosition(src, type, x, y);
-  });
-}
-
-// Helpers to check dumpster collision
-
-function isOverDumpster(x, y, w, h) {
-  const dumpsterRect = stickerDumpster.getBoundingClientRect();
-  const containerRect = editorContainer.getBoundingClientRect();
-
-  // Sticker pos relative to viewport:
-  const stickerLeft = containerRect.left + x;
-  const stickerRight = stickerLeft + w;
-  const stickerTop = containerRect.top + y;
-  const stickerBottom = stickerTop + h;
-
-  // Check overlap (rect collision)
-  return !(
-    stickerRight < dumpsterRect.left ||
-    stickerLeft > dumpsterRect.right ||
-    stickerBottom < dumpsterRect.top ||
-    stickerTop > dumpsterRect.bottom
-  );
-}
-
-function saveSticker(src, type, x, y) {
-  if (!currentUser || !currentTab) return;
-  const users = getUsers();
-  const tabData = users[currentUser].data.tabs[currentTab];
-
-  tabData.stickers.push({ src, type, x, y });
-  saveUsers(users);
-}
-
-function saveStickerPosition(src, type, x, y) {
-  if (!currentUser || !currentTab) return;
-  const users = getUsers();
-  const tabData = users[currentUser].data.tabs[currentTab];
-  let sticker = tabData.stickers.find((s) => s.src === src && s.type === type);
-  if (sticker) {
-    sticker.x = x;
-    sticker.y = y;
-    saveUsers(users);
-  }
-}
-
-function removeSticker(src, type) {
-  if (!currentUser || !currentTab) return;
-  const users = getUsers();
-  let tabData = users[currentUser].data.tabs[currentTab];
-  tabData.stickers = tabData.stickers.filter((s) => !(s.src === src && s.type === type));
-  saveUsers(users);
-}
-
-// Settings inputs change handlers
+// Settings inputs
 
 bgColorInput.addEventListener("input", (e) => {
   if (!currentUser || !currentTab) return;
@@ -362,7 +251,6 @@ tabColorInput.addEventListener("input", (e) => {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   users[currentUser].data.tabs[currentTab].tabColor = e.target.value;
-
   [...tabsDiv.children].forEach((tabEl) => {
     if (tabEl.textContent === currentTab) tabEl.style.backgroundColor = e.target.value;
   });
@@ -373,7 +261,6 @@ tabTextColorInput.addEventListener("input", (e) => {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   users[currentUser].data.tabs[currentTab].tabTextColor = e.target.value;
-
   [...tabsDiv.children].forEach((tabEl) => {
     if (tabEl.textContent === currentTab) tabEl.style.color = e.target.value;
   });
@@ -449,7 +336,172 @@ customFontInput.addEventListener("change", (e) => {
   reader.readAsDataURL(file);
 });
 
-// Login/signup buttons
+// Sticker logic
 
+const emojiStickers = document.querySelectorAll(".emojiSticker");
+
+emojiStickers.forEach((emoji) => {
+  emoji.addEventListener("dragstart", (e) => {
+    e.dataTransfer.setData("text/plain", JSON.stringify({ type: "emoji", src: e.target.textContent }));
+  });
+});
+
+customStickerInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    e.target.value = "";
+    addStickerToCanvas({ type: "image", src: reader.result, x: 100, y: 100 });
+  };
+  reader.readAsDataURL(file);
+});
+
+// Allow dropping stickers inside editor container
+editorContainer.addEventListener("dragover", (e) => {
+  e.preventDefault();
+});
+
+editorContainer.addEventListener("drop", (e) => {
+  e.preventDefault();
+  if (!currentUser || !currentTab) return;
+  const data = e.dataTransfer.getData("text/plain");
+  if (!data) return;
+  let sticker;
+  try {
+    sticker = JSON.parse(data);
+  } catch {
+    return;
+  }
+  if (!sticker.type || !sticker.src) return;
+
+  // Add sticker at drop position
+  const rect = editorContainer.getBoundingClientRect();
+  let x = e.clientX - rect.left - 25; // center approx
+  let y = e.clientY - rect.top - 25;
+
+  if (sticker.type === "emoji" || sticker.type === "image") {
+    sticker.x = x;
+    sticker.y = y;
+    addStickerToCanvas(sticker);
+    saveSticker(sticker);
+  }
+});
+
+function addStickerToCanvas(sticker) {
+  if (!currentUser || !currentTab) return;
+  if (sticker.type === "image") {
+    const img = document.createElement("img");
+    img.src = sticker.src;
+    img.className = "sticker";
+    img.style.left = sticker.x + "px";
+    img.style.top = sticker.y + "px";
+    setupStickerDrag(img, sticker);
+    editorContainer.appendChild(img);
+  } else if (sticker.type === "emoji") {
+    const span = document.createElement("span");
+    span.textContent = sticker.src;
+    span.className = "emojiOnCanvas";
+    span.style.left = sticker.x + "px";
+    span.style.top = sticker.y + "px";
+    setupStickerDrag(span, sticker);
+    editorContainer.appendChild(span);
+  }
+}
+
+function setupStickerDrag(el, sticker) {
+  el.style.position = "absolute";
+  el.draggable = true;
+  el.style.userSelect = "none";
+
+  let offsetX, offsetY;
+
+  el.addEventListener("dragstart", (e) => {
+    el.classList.add("dragging");
+    const rect = el.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    e.dataTransfer.setDragImage(el, offsetX, offsetY);
+    e.dataTransfer.setData("text/plain", JSON.stringify(sticker));
+  });
+
+  el.addEventListener("dragend", (e) => {
+    el.classList.remove("dragging");
+
+    const containerRect = editorContainer.getBoundingClientRect();
+    let x = e.clientX - containerRect.left - offsetX;
+    let y = e.clientY - containerRect.top - offsetY;
+
+    // Clamp inside container
+    x = Math.max(0, Math.min(x, containerRect.width - el.offsetWidth));
+    y = Math.max(0, Math.min(y, containerRect.height - el.offsetHeight));
+
+    if (isOverDumpster(x, y, el.offsetWidth, el.offsetHeight)) {
+      // Remove sticker from DOM and storage
+      el.remove();
+      removeSticker(sticker);
+      return;
+    }
+
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+
+    saveStickerPosition(sticker, x, y);
+  });
+}
+
+function isOverDumpster(x, y, w, h) {
+  const dumpsterRect = stickerDumpster.getBoundingClientRect();
+  const containerRect = editorContainer.getBoundingClientRect();
+
+  // Convert to viewport coordinates
+  const stickerLeft = containerRect.left + x;
+  const stickerRight = stickerLeft + w;
+  const stickerTop = containerRect.top + y;
+  const stickerBottom = stickerTop + h;
+
+  return !(
+    stickerRight < dumpsterRect.left ||
+    stickerLeft > dumpsterRect.right ||
+    stickerBottom < dumpsterRect.top ||
+    stickerTop > dumpsterRect.bottom
+  );
+}
+
+function saveSticker(sticker) {
+  if (!currentUser || !currentTab) return;
+  const users = getUsers();
+  const tabData = users[currentUser].data.tabs[currentTab];
+  tabData.stickers.push(sticker);
+  saveUsers(users);
+}
+
+function saveStickerPosition(sticker, x, y) {
+  if (!currentUser || !currentTab) return;
+  const users = getUsers();
+  const tabData = users[currentUser].data.tabs[currentTab];
+  // Find matching sticker by src + type + approx position (if needed)
+  let s = tabData.stickers.find(
+    (st) => st.src === sticker.src && st.type === sticker.type
+  );
+  if (s) {
+    s.x = x;
+    s.y = y;
+    saveUsers(users);
+  }
+}
+
+function removeSticker(sticker) {
+  if (!currentUser || !currentTab) return;
+  const users = getUsers();
+  const tabData = users[currentUser].data.tabs[currentTab];
+  tabData.stickers = tabData.stickers.filter(
+    (st) => !(st.src === sticker.src && st.type === sticker.type)
+  );
+  saveUsers(users);
+}
+
+// Login / Signup button event handlers
 document.getElementById("loginBtn").addEventListener("click", login);
 document.getElementById("signupBtn").addEventListener("click", signup);
