@@ -1,0 +1,243 @@
+/* Colors primary: Purple > Dark Blue > Black */
+
+body {
+  margin: 0;
+  background: black;
+  color: white;
+  font-family: Arial, sans-serif;
+  user-select: none;
+}
+
+.centered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.auth-box {
+  background: #4b0082; /* indigo purple */
+  padding: 40px;
+  border: 2px solid #2a2a72; /* dark blue */
+  border-radius: 12px;
+  text-align: center;
+  width: 320px;
+  box-sizing: border-box;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 0 10px #2a2a72;
+}
+
+.auth-box input {
+  padding: 12px;
+  margin: 12px 0;
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.auth-buttons button {
+  margin: 7px 8px;
+  padding: 12px 24px;
+  background: #7b3fbf; /* purple */
+  color: white;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 0.3s ease;
+  user-select: none;
+}
+
+.auth-buttons button:hover {
+  background: #562e8a; /* darker purple */
+}
+
+#topBar {
+  background: #2a2a72; /* dark blue */
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+
+#tabs {
+  flex: 1;
+}
+
+.tab {
+  background: #7b3fbf; /* purple */
+  color: white;
+  padding: 7px 12px;
+  margin-right: 6px;
+  cursor: pointer;
+  display: inline-block;
+  border-radius: 7px;
+  user-select: none;
+  transition: background 0.3s ease;
+}
+
+.tab.active {
+  font-weight: 800;
+  border-bottom: 3px solid white;
+  background: #a36ce1;
+}
+
+.tab:hover:not(.active) {
+  background: #6a35b3;
+}
+
+#btnCreateTab,
+#btnSettings,
+#btnExport {
+  background: #7b3fbf;
+  border: none;
+  color: white;
+  font-size: 22px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  margin-left: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.3s ease;
+}
+
+#btnCreateTab:hover,
+#btnSettings:hover,
+#btnExport:hover {
+  background: #6a35b3;
+}
+
+#editorContainer {
+  position: relative;
+  height: 400px;
+  background: #111;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+#noteInput {
+  width: 100%;
+  height: 100%;
+  padding: 14px;
+  background: transparent;
+  color: white;
+  resize: none;
+  border: none;
+  font-family: inherit;
+  font-size: 18px;
+  box-sizing: border-box;
+  outline: none;
+  user-select: text;
+}
+
+#stickersPanel {
+  background: #222;
+  padding: 12px 8px;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.emojiSticker {
+  font-size: 32px;
+  margin: 5px;
+  cursor: grab;
+  display: inline-block;
+  transition: transform 0.1s ease;
+  user-select: none;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.emojiSticker:active {
+  cursor: grabbing;
+  transform: scale(1.3);
+}
+
+img.sticker,
+.emojiOnCanvas {
+  width: 50px;
+  position: absolute;
+  cursor: move;
+  user-select: none;
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease;
+}
+
+img.sticker.dragging,
+.emojiOnCanvas.dragging {
+  opacity: 0.8;
+  box-shadow: 0 0 10px 3px #a36ce1;
+  z-index: 1000;
+}
+
+#stickerDumpster {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  font-size: 36px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease;
+  user-select: none;
+}
+
+#stickerDumpster.dragover {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 5px red);
+}
+
+#settingsPanel {
+  background: rgba(0, 0, 0, 0.95);
+  color: white;
+  padding: 20px;
+  position: absolute;
+  top: 55px;
+  right: 12px;
+  z-index: 20;
+  width: 280px;
+  border-radius: 12px;
+  box-sizing: border-box;
+  box-shadow: 0 0 15px #7b3fbf;
+}
+
+#settingsPanel input[type="color"],
+#settingsPanel input[type="file"],
+#settingsPanel select {
+  margin: 6px 0 12px 0;
+  width: 100%;
+  box-sizing: border-box;
+  background: #333;
+  color: white;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 6px;
+  outline: none;
+}
+
+#resetThemeBtn,
+#closeSettingsBtn {
+  background: #7b3fbf;
+  border: none;
+  color: white;
+  padding: 10px 18px;
+  margin-top: 8px;
+  border-radius: 8px;
+  width: 48%;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  user-select: none;
+}
+
+#resetThemeBtn:hover,
+#closeSettingsBtn:hover {
+  background: #6a35b3;
+}
