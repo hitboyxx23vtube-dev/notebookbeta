@@ -270,3 +270,33 @@ img.sticker.dragging,
 #closeSettingsBtn:hover {
   background: #6a35b3;
 }
+
+/* New music controls below editor */
+#musicControls {
+  background: #2a2a72; /* dark blue */
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+  color: white;
+}
+
+#musicControls button {
+  background: #7b3fbf;
+  border: none;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#musicControls button:hover {
+  background: #6a35b3;
+}
+
+#musicControls input[type="range"] {
+  cursor: pointer;
+}
