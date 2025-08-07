@@ -24,6 +24,11 @@ const resetThemeBtn = document.getElementById("resetThemeBtn");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const customStickerInput = document.getElementById("customSticker");
 
+const playMusicBtn = document.getElementById("playMusicBtn");
+const pauseMusicBtn = document.getElementById("pauseMusicBtn");
+const stopMusicBtn = document.getElementById("stopMusicBtn");
+const volumeRange = document.getElementById("volumeRange");
+
 let currentUser = "";
 let currentTab = "";
 let tabs = [];
@@ -170,17 +175,21 @@ function switchTab(name) {
   const activeTab = [...tabsDiv.children].find((t) => t.textContent.startsWith(name));
   if (activeTab) activeTab.classList.add("active");
 
-  const tabData = getUsers()[currentUser].data.tabs[name];
-  noteInput.value = tabData.content;
+  const users = getUsers();
+  const tabData = users[currentUser].data.tabs[name];
+  noteInput.value = tabData.content || "";
+  editorContainer.style.backgroundColor = tabData.bgColor || "#000000";
   editorContainer.style.backgroundImage = tabData.bgImage ? `url(${tabData.bgImage})` : "none";
   noteInput.style.fontFamily = tabData.customFont || tabData.font || "Arial";
-  editorContainer.style.backgroundColor = tabData.bgColor || "black";
+  // Clear existing stickers
+  Array.from(editorContainer.querySelectorAll("img.sticker, .emojiOnCanvas")).forEach((el) => el.remove());
 
-  bgColorInput.value = tabData.bgColor || "#000000";
-  tabColorInput.value = tabData.tabColor || "#7b3fbf";
-  tabTextColorInput.value = tabData.tabTextColor || "#FFFFFF";
-  fontSelector.value = tabData.customFont ? "Custom" : tabData.font;
+  // Add stickers for this tab
+  if (tabData.stickers && Array.isArray(tabData.stickers)) {
+    tabData.stickers.forEach(addStickerToCanvas);
+  }
 
+  // Music
   if (tabData.music) {
     musicPlayer.src = tabData.music;
     musicPlayer.play();
@@ -189,26 +198,29 @@ function switchTab(name) {
     musicPlayer.src = "";
   }
 
-  // Remove existing stickers
-  document.querySelectorAll(".sticker, .emojiOnCanvas").forEach((el) => el.remove());
-  // Add saved stickers
-  tabData.stickers.forEach((sticker) => addStickerToCanvas(sticker));
+  // Update settings panel values
+  bgColorInput.value = tabData.bgColor || "#000000";
+  tabColorInput.value = tabData.tabColor || "#7b3fbf";
+  tabTextColorInput.value = tabData.tabTextColor || "#FFFFFF";
+  fontSelector.value = tabData.font || "Arial";
+  if (tabData.font === "") {
+    fontSelector.value = "Custom";
+    customFontInput.style.display = "block";
+  } else {
+    customFontInput.style.display = "none";
+  }
 }
 
-noteInput.addEventListener("input", () => {
+noteInput.oninput = () => {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   users[currentUser].data.tabs[currentTab].content = noteInput.value;
   saveUsers(users);
-});
+};
 
 btnCreateTab.onclick = createTab;
 btnSettings.onclick = () => {
-  if (settingsPanel.style.display === "none") {
-    settingsPanel.style.display = "block";
-  } else {
-    settingsPanel.style.display = "none";
-  }
+  settingsPanel.style.display = settingsPanel.style.display === "none" ? "block" : "none";
 };
 btnExport.onclick = () => {
   if (!currentUser || !currentTab) return;
@@ -220,7 +232,6 @@ btnExport.onclick = () => {
   a.click();
   URL.revokeObjectURL(a.href);
 };
-
 resetThemeBtn.onclick = () => {
   if (!currentUser || !currentTab) return;
   bgColorInput.value = "#000000";
@@ -243,7 +254,6 @@ resetThemeBtn.onclick = () => {
 
   switchTab(currentTab);
 };
-
 closeSettingsBtn.onclick = () => (settingsPanel.style.display = "none");
 
 // Settings input handlers
@@ -254,7 +264,6 @@ bgColorInput.oninput = (e) => {
   editorContainer.style.backgroundColor = e.target.value;
   saveUsers(users);
 };
-
 tabColorInput.oninput = (e) => {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
@@ -264,7 +273,6 @@ tabColorInput.oninput = (e) => {
   });
   saveUsers(users);
 };
-
 tabTextColorInput.oninput = (e) => {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
@@ -274,7 +282,6 @@ tabTextColorInput.oninput = (e) => {
   });
   saveUsers(users);
 };
-
 bgImageInput.onchange = (e) => {
   if (!currentUser || !currentTab) return;
   const file = e.target.files[0];
@@ -288,7 +295,6 @@ bgImageInput.onchange = (e) => {
   };
   reader.readAsDataURL(file);
 };
-
 bgMusicInput.onchange = (e) => {
   if (!currentUser || !currentTab) return;
   const file = e.target.files[0];
@@ -303,7 +309,6 @@ bgMusicInput.onchange = (e) => {
   };
   reader.readAsDataURL(file);
 };
-
 fontSelector.onchange = (e) => {
   if (!currentUser || !currentTab) return;
   const val = e.target.value;
@@ -318,7 +323,6 @@ fontSelector.onchange = (e) => {
     saveUsers(users);
   }
 };
-
 customFontInput.onchange = (e) => {
   if (!currentUser || !currentTab) return;
   const file = e.target.files[0];
@@ -344,16 +348,32 @@ customFontInput.onchange = (e) => {
   reader.readAsDataURL(file);
 };
 
+// Music controls
+playMusicBtn.onclick = () => {
+  if (musicPlayer.src) musicPlayer.play();
+};
+pauseMusicBtn.onclick = () => {
+  musicPlayer.pause();
+};
+stopMusicBtn.onclick = () => {
+  musicPlayer.pause();
+  musicPlayer.currentTime = 0;
+};
+volumeRange.oninput = (e) => {
+  musicPlayer.volume = e.target.value;
+};
+
 // Stickers logic
 
-// Emoji stickers draggable setup
-document.querySelectorAll(".emojiSticker").forEach((emoji) => {
+const emojiStickers = document.querySelectorAll(".emojiSticker");
+emojiStickers.forEach((emoji) => {
   emoji.addEventListener("dragstart", (e) => {
-    e.dataTransfer.setData("application/json", JSON.stringify({ type: "emoji", src: emoji.textContent }));
+    e.dataTransfer.setData(
+      "application/json",
+      JSON.stringify({ type: "emoji", src: emoji.textContent })
+    );
   });
 });
-
-// Custom sticker upload
 customStickerInput.onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -361,12 +381,11 @@ customStickerInput.onchange = (e) => {
   reader.onload = () => {
     addStickerToCanvas({ type: "image", src: reader.result, x: 100, y: 100 });
     saveSticker({ type: "image", src: reader.result, x: 100, y: 100 });
-    customStickerInput.value = ""; // reset input so same file can be uploaded again
+    customStickerInput.value = "";
   };
   reader.readAsDataURL(file);
 };
 
-// Drag and drop on editor container
 editorContainer.addEventListener("dragover", (e) => {
   e.preventDefault();
 });
@@ -392,9 +411,8 @@ editorContainer.addEventListener("drop", (e) => {
   sticker.x = x;
   sticker.y = y;
 
-  // If near dumpster (within 10px), don't add, just delete
   if (isNearDumpster(x, y, 50, 50)) {
-    return; // just ignore - don't add sticker
+    return; // ignore adding if near dumpster on drop
   }
 
   addStickerToCanvas(sticker);
@@ -446,11 +464,9 @@ function setupStickerDrag(el, sticker) {
     let x = e.clientX - containerRect.left - offsetX;
     let y = e.clientY - containerRect.top - offsetY;
 
-    // Clamp inside container
     x = Math.max(0, Math.min(x, containerRect.width - el.offsetWidth));
     y = Math.max(0, Math.min(y, containerRect.height - el.offsetHeight));
 
-    // If near dumpster (within 10 px), delete sticker
     if (isNearDumpster(x, y, el.offsetWidth, el.offsetHeight)) {
       el.remove();
       removeSticker(sticker);
@@ -464,20 +480,15 @@ function setupStickerDrag(el, sticker) {
   });
 }
 
-// Checks if sticker is within 10 pixels of dumpster (rectangle)
-// x,y: top-left coords of sticker relative to container
-// w,h: sticker width and height
 function isNearDumpster(x, y, w, h) {
   const dumpsterRect = stickerDumpster.getBoundingClientRect();
   const containerRect = editorContainer.getBoundingClientRect();
 
-  // Convert sticker coords to viewport coords
   const stickerLeft = containerRect.left + x;
   const stickerRight = stickerLeft + w;
   const stickerTop = containerRect.top + y;
   const stickerBottom = stickerTop + h;
 
-  // Define extended dumpster rectangle by 10px in all directions
   const extendedLeft = dumpsterRect.left - 10;
   const extendedRight = dumpsterRect.right + 10;
   const extendedTop = dumpsterRect.top - 10;
@@ -495,8 +506,13 @@ function saveSticker(sticker) {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   const tabData = users[currentUser].data.tabs[currentTab];
-  // Prevent duplicates on drop, add only if not exists at coords approx
-  const exists = tabData.stickers.some((st) => st.src === sticker.src && st.type === sticker.type && Math.abs(st.x - sticker.x) < 5 && Math.abs(st.y - sticker.y) < 5);
+  const exists = tabData.stickers.some(
+    (st) =>
+      st.src === sticker.src &&
+      st.type === sticker.type &&
+      Math.abs(st.x - sticker.x) < 5 &&
+      Math.abs(st.y - sticker.y) < 5
+  );
   if (!exists) {
     tabData.stickers.push(sticker);
     saveUsers(users);
@@ -507,10 +523,17 @@ function saveStickerPosition(sticker, x, y) {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   const tabData = users[currentUser].data.tabs[currentTab];
-  let s = tabData.stickers.find((st) => st.src === sticker.src && st.type === sticker.type && Math.abs(st.x - sticker.x) < 20 && Math.abs(st.y - sticker.y) < 20);
+  let s = tabData.stickers.find(
+    (st) =>
+      st.src === sticker.src &&
+      st.type === sticker.type &&
+      Math.abs(st.x - sticker.x) < 20 &&
+      Math.abs(st.y - sticker.y) < 20
+  );
   if (!s) {
-    // fallback: find by src & type only
-    s = tabData.stickers.find((st) => st.src === sticker.src && st.type === sticker.type);
+    s = tabData.stickers.find(
+      (st) => st.src === sticker.src && st.type === sticker.type
+    );
   }
   if (s) {
     s.x = x;
@@ -523,10 +546,17 @@ function removeSticker(sticker) {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   const tabData = users[currentUser].data.tabs[currentTab];
-  tabData.stickers = tabData.stickers.filter((st) => !(st.src === sticker.src && st.type === sticker.type && Math.abs(st.x - sticker.x) < 20 && Math.abs(st.y - sticker.y) < 20));
+  tabData.stickers = tabData.stickers.filter(
+    (st) =>
+      !(
+        st.src === sticker.src &&
+        st.type === sticker.type &&
+        Math.abs(st.x - sticker.x) < 20 &&
+        Math.abs(st.y - sticker.y) < 20
+      )
+  );
   saveUsers(users);
 }
 
-// Login and Signup buttons
 document.getElementById("loginBtn").onclick = login;
 document.getElementById("signupBtn").onclick = signup;
