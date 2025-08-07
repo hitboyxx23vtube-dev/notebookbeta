@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <title>Custom Notebook</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="authContainer" class="centered">
+    <div class="auth-box">
+      <h2>🔐 Custom Notebook Login</h2>
+      <input type="text" id="username" placeholder="Username" autocomplete="off"/>
+      <input type="password" id="password" placeholder="Password" autocomplete="off"/>
+      <div class="auth-buttons">
+        <button id="loginBtn">Login</button>
+        <button id="signupBtn">Sign Up</button>
+      </div>
+      <p id="authMessage"></p>
+    </div>
+  </div>
+
+  <div id="notebookContainer" style="display:none;">
+    <div id="topBar">
+      <div id="tabs"></div>
+      <button id="btnCreateTab" title="Create New Tab">➕</button>
+      <button id="btnSettings" title="Open Settings">⚙️</button>
+      <button id="btnExport" title="Export Tab to TXT">📤 Export Tab</button>
+    </div>
+
+    <div id="editorContainer">
+      <textarea id="noteInput" placeholder="Start writing..."></textarea>
+      <div id="stickerDumpster" title="Drag stickers here to delete">🗑️</div>
+    </div>
+
+    <div id="stickersPanel">
+      <div id="emojiStickers">
+        <span class="emojiSticker" draggable="true">🌸</span>
+        <span class="emojiSticker" draggable="true">🦄</span>
+        <span class="emojiSticker" draggable="true">🐱</span>
+        <span class="emojiSticker" draggable="true">💡</span>
+      </div>
+      <input type="file" id="customSticker" accept=".png,.jpg" title="Upload Custom Sticker (PNG/JPG)" />
+    </div>
+
+    <div id="settingsPanel" style="display:none;">
+      <h3>Settings</h3>
+      <label>Background Color: <input type="color" id="bgColor" /></label><br />
+      <label>Tab Color: <input type="color" id="tabColor" /></label><br />
+      <label>Tab Text Color: <input type="color" id="tabTextColor" /></label><br />
+      <label>Background Image: <input type="file" id="bgImage" accept=".png,.jpg" /></label><br />
+      <label>Background Music: <input type="file" id="bgMusic" accept=".mp3,.wav" /></label><br />
+      <label>Font:
+        <select id="fontSelector">
+          <option value="Arial">Arial</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Custom">Upload Custom</option>
+        </select>
+      </label><br />
+      <input type="file" id="customFont" accept=".ttf,.otf" style="display:none;" /><br />
+      <button id="resetThemeBtn">Reset Theme</button>
+      <button id="closeSettingsBtn">Close Settings</button>
+    </div>
+
+    <audio id="musicPlayer" loop></audio>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
