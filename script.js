@@ -23,7 +23,6 @@ const btnExport = document.getElementById("btnExport");
 const resetThemeBtn = document.getElementById("resetThemeBtn");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const customStickerInput = document.getElementById("customSticker");
-const btnDeleteTab = document.getElementById("btnDeleteTab");
 
 let currentUser = "";
 let currentTab = "";
@@ -121,13 +120,13 @@ function createTab() {
   switchTab(name);
 }
 
-function deleteCurrentTab() {
-  if (!currentTab) return alert("No tab selected.");
-  if (!confirm(`Delete tab "${currentTab}"? This action cannot be undone.`)) return;
+function deleteTab(name) {
+  if (!name) return;
+  if (!confirm(`Delete tab "${name}"? This cannot be undone.`)) return;
   const users = getUsers();
-  delete users[currentUser].data.tabs[currentTab];
+  delete users[currentUser].data.tabs[name];
   saveUsers(users);
-  tabs = tabs.filter((t) => t !== currentTab);
+  tabs = tabs.filter((t) => t !== name);
   if (tabs.length > 0) {
     loadUserData();
   } else {
@@ -150,13 +149,25 @@ function renderTab(name) {
   tab.style.color = tabData.tabTextColor || "white";
 
   tab.onclick = () => switchTab(name);
+
+  // Add delete button
+  const delBtn = document.createElement("span");
+  delBtn.className = "deleteTabBtn";
+  delBtn.textContent = "×";
+  delBtn.title = `Delete tab "${name}"`;
+  delBtn.onclick = (e) => {
+    e.stopPropagation();
+    deleteTab(name);
+  };
+  tab.appendChild(delBtn);
+
   tabsDiv.appendChild(tab);
 }
 
 function switchTab(name) {
   currentTab = name;
   Array.from(tabsDiv.children).forEach((t) => t.classList.remove("active"));
-  const activeTab = [...tabsDiv.children].find((t) => t.textContent === name);
+  const activeTab = [...tabsDiv.children].find((t) => t.textContent.startsWith(name));
   if (activeTab) activeTab.classList.add("active");
 
   const tabData = getUsers()[currentUser].data.tabs[name];
@@ -191,26 +202,26 @@ noteInput.addEventListener("input", () => {
   saveUsers(users);
 });
 
-btnCreateTab.addEventListener("click", createTab);
-btnDeleteTab.addEventListener("click", deleteCurrentTab);
-
-btnSettings.addEventListener("click", () => {
-  if (!currentTab) return alert("Please select or create a tab first.");
-  settingsPanel.style.display = "block";
-});
-
-btnExport.addEventListener("click", () => {
-  if (!currentUser || !currentTab) return alert("Please select a tab.");
-  const content = getUsers()[currentUser].data.tabs[currentTab].content;
-  const blob = new Blob([content], { type: "text/plain" });
+btnCreateTab.onclick = createTab;
+btnSettings.onclick = () => {
+  if (settingsPanel.style.display === "none") {
+    settingsPanel.style.display = "block";
+  } else {
+    settingsPanel.style.display = "none";
+  }
+};
+btnExport.onclick = () => {
+  if (!currentUser || !currentTab) return;
+  const users = getUsers();
+  const content = users[currentUser].data.tabs[currentTab].content;
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
+  a.href = URL.createObjectURL(new Blob([content], { type: "text/plain" }));
   a.download = `${currentTab}.txt`;
   a.click();
   URL.revokeObjectURL(a.href);
-});
+};
 
-resetThemeBtn.addEventListener("click", () => {
+resetThemeBtn.onclick = () => {
   if (!currentUser || !currentTab) return;
   bgColorInput.value = "#000000";
   tabColorInput.value = "#7b3fbf";
@@ -231,43 +242,40 @@ resetThemeBtn.addEventListener("click", () => {
   saveUsers(users);
 
   switchTab(currentTab);
-});
+};
 
-closeSettingsBtn.addEventListener("click", () => {
-  settingsPanel.style.display = "none";
-});
+closeSettingsBtn.onclick = () => (settingsPanel.style.display = "none");
 
-// Settings inputs
-
-bgColorInput.addEventListener("input", (e) => {
+// Settings input handlers
+bgColorInput.oninput = (e) => {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   users[currentUser].data.tabs[currentTab].bgColor = e.target.value;
   editorContainer.style.backgroundColor = e.target.value;
   saveUsers(users);
-});
+};
 
-tabColorInput.addEventListener("input", (e) => {
+tabColorInput.oninput = (e) => {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   users[currentUser].data.tabs[currentTab].tabColor = e.target.value;
-  [...tabsDiv.children].forEach((tabEl) => {
-    if (tabEl.textContent === currentTab) tabEl.style.backgroundColor = e.target.value;
+  Array.from(tabsDiv.children).forEach((tabEl) => {
+    if (tabEl.textContent.startsWith(currentTab)) tabEl.style.backgroundColor = e.target.value;
   });
   saveUsers(users);
-});
+};
 
-tabTextColorInput.addEventListener("input", (e) => {
+tabTextColorInput.oninput = (e) => {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   users[currentUser].data.tabs[currentTab].tabTextColor = e.target.value;
-  [...tabsDiv.children].forEach((tabEl) => {
-    if (tabEl.textContent === currentTab) tabEl.style.color = e.target.value;
+  Array.from(tabsDiv.children).forEach((tabEl) => {
+    if (tabEl.textContent.startsWith(currentTab)) tabEl.style.color = e.target.value;
   });
   saveUsers(users);
-});
+};
 
-bgImageInput.addEventListener("change", (e) => {
+bgImageInput.onchange = (e) => {
   if (!currentUser || !currentTab) return;
   const file = e.target.files[0];
   if (!file) return;
@@ -279,9 +287,9 @@ bgImageInput.addEventListener("change", (e) => {
     saveUsers(users);
   };
   reader.readAsDataURL(file);
-});
+};
 
-bgMusicInput.addEventListener("change", (e) => {
+bgMusicInput.onchange = (e) => {
   if (!currentUser || !currentTab) return;
   const file = e.target.files[0];
   if (!file) return;
@@ -294,9 +302,9 @@ bgMusicInput.addEventListener("change", (e) => {
     saveUsers(users);
   };
   reader.readAsDataURL(file);
-});
+};
 
-fontSelector.addEventListener("change", (e) => {
+fontSelector.onchange = (e) => {
   if (!currentUser || !currentTab) return;
   const val = e.target.value;
   const users = getUsers();
@@ -309,9 +317,9 @@ fontSelector.addEventListener("change", (e) => {
     noteInput.style.fontFamily = val;
     saveUsers(users);
   }
-});
+};
 
-customFontInput.addEventListener("change", (e) => {
+customFontInput.onchange = (e) => {
   if (!currentUser || !currentTab) return;
   const file = e.target.files[0];
   if (!file) return;
@@ -334,30 +342,31 @@ customFontInput.addEventListener("change", (e) => {
     saveUsers(users);
   };
   reader.readAsDataURL(file);
-});
+};
 
-// Sticker logic
+// Stickers logic
 
-const emojiStickers = document.querySelectorAll(".emojiSticker");
-
-emojiStickers.forEach((emoji) => {
+// Emoji stickers draggable setup
+document.querySelectorAll(".emojiSticker").forEach((emoji) => {
   emoji.addEventListener("dragstart", (e) => {
-    e.dataTransfer.setData("text/plain", JSON.stringify({ type: "emoji", src: e.target.textContent }));
+    e.dataTransfer.setData("application/json", JSON.stringify({ type: "emoji", src: emoji.textContent }));
   });
 });
 
-customStickerInput.addEventListener("change", (e) => {
+// Custom sticker upload
+customStickerInput.onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
-    e.target.value = "";
     addStickerToCanvas({ type: "image", src: reader.result, x: 100, y: 100 });
+    saveSticker({ type: "image", src: reader.result, x: 100, y: 100 });
+    customStickerInput.value = ""; // reset input so same file can be uploaded again
   };
   reader.readAsDataURL(file);
-});
+};
 
-// Allow dropping stickers inside editor container
+// Drag and drop on editor container
 editorContainer.addEventListener("dragover", (e) => {
   e.preventDefault();
 });
@@ -365,8 +374,9 @@ editorContainer.addEventListener("dragover", (e) => {
 editorContainer.addEventListener("drop", (e) => {
   e.preventDefault();
   if (!currentUser || !currentTab) return;
-  const data = e.dataTransfer.getData("text/plain");
+  const data = e.dataTransfer.getData("application/json");
   if (!data) return;
+
   let sticker;
   try {
     sticker = JSON.parse(data);
@@ -375,17 +385,15 @@ editorContainer.addEventListener("drop", (e) => {
   }
   if (!sticker.type || !sticker.src) return;
 
-  // Add sticker at drop position
   const rect = editorContainer.getBoundingClientRect();
-  let x = e.clientX - rect.left - 25; // center approx
+  let x = e.clientX - rect.left - 25;
   let y = e.clientY - rect.top - 25;
 
-  if (sticker.type === "emoji" || sticker.type === "image") {
-    sticker.x = x;
-    sticker.y = y;
-    addStickerToCanvas(sticker);
-    saveSticker(sticker);
-  }
+  sticker.x = x;
+  sticker.y = y;
+
+  addStickerToCanvas(sticker);
+  saveSticker(sticker);
 });
 
 function addStickerToCanvas(sticker) {
@@ -423,7 +431,7 @@ function setupStickerDrag(el, sticker) {
     offsetY = e.clientY - rect.top;
 
     e.dataTransfer.setDragImage(el, offsetX, offsetY);
-    e.dataTransfer.setData("text/plain", JSON.stringify(sticker));
+    e.dataTransfer.setData("application/json", JSON.stringify(sticker));
   });
 
   el.addEventListener("dragend", (e) => {
@@ -437,8 +445,8 @@ function setupStickerDrag(el, sticker) {
     x = Math.max(0, Math.min(x, containerRect.width - el.offsetWidth));
     y = Math.max(0, Math.min(y, containerRect.height - el.offsetHeight));
 
+    // Check if over dumpster
     if (isOverDumpster(x, y, el.offsetWidth, el.offsetHeight)) {
-      // Remove sticker from DOM and storage
       el.remove();
       removeSticker(sticker);
       return;
@@ -455,7 +463,7 @@ function isOverDumpster(x, y, w, h) {
   const dumpsterRect = stickerDumpster.getBoundingClientRect();
   const containerRect = editorContainer.getBoundingClientRect();
 
-  // Convert to viewport coordinates
+  // Convert to viewport coords
   const stickerLeft = containerRect.left + x;
   const stickerRight = stickerLeft + w;
   const stickerTop = containerRect.top + y;
@@ -473,18 +481,23 @@ function saveSticker(sticker) {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   const tabData = users[currentUser].data.tabs[currentTab];
-  tabData.stickers.push(sticker);
-  saveUsers(users);
+  // Prevent duplicates on drop, add only if not exists at coords approx
+  const exists = tabData.stickers.some((st) => st.src === sticker.src && st.type === sticker.type && Math.abs(st.x - sticker.x) < 5 && Math.abs(st.y - sticker.y) < 5);
+  if (!exists) {
+    tabData.stickers.push(sticker);
+    saveUsers(users);
+  }
 }
 
 function saveStickerPosition(sticker, x, y) {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   const tabData = users[currentUser].data.tabs[currentTab];
-  // Find matching sticker by src + type + approx position (if needed)
-  let s = tabData.stickers.find(
-    (st) => st.src === sticker.src && st.type === sticker.type
-  );
+  let s = tabData.stickers.find((st) => st.src === sticker.src && st.type === sticker.type && Math.abs(st.x - sticker.x) < 20 && Math.abs(st.y - sticker.y) < 20);
+  if (!s) {
+    // fallback: find by src & type only
+    s = tabData.stickers.find((st) => st.src === sticker.src && st.type === sticker.type);
+  }
   if (s) {
     s.x = x;
     s.y = y;
@@ -496,12 +509,10 @@ function removeSticker(sticker) {
   if (!currentUser || !currentTab) return;
   const users = getUsers();
   const tabData = users[currentUser].data.tabs[currentTab];
-  tabData.stickers = tabData.stickers.filter(
-    (st) => !(st.src === sticker.src && st.type === sticker.type)
-  );
+  tabData.stickers = tabData.stickers.filter((st) => !(st.src === sticker.src && st.type === sticker.type && Math.abs(st.x - sticker.x) < 20 && Math.abs(st.y - sticker.y) < 20));
   saveUsers(users);
 }
 
-// Login / Signup button event handlers
-document.getElementById("loginBtn").addEventListener("click", login);
-document.getElementById("signupBtn").addEventListener("click", signup);
+// Login and Signup buttons
+document.getElementById("loginBtn").onclick = login;
+document.getElementById("signupBtn").onclick = signup;
